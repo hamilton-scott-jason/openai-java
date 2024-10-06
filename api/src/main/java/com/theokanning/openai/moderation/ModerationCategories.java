@@ -1,9 +1,8 @@
 package com.theokanning.openai.moderation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
 
-import java.util.List;
+import lombok.Data;
 
 /**
  * An object containing the flags for each moderation category

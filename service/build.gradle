@@ -1,5 +1,19 @@
 apply plugin: 'java-library'
-apply plugin: "com.vanniktech.maven.publish"
+apply plugin: "maven-publish"
+
+group = GROUP
+version = VERSION_NAME
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
+}
 
 dependencies {
     api project(":client")
@@ -13,9 +27,13 @@ dependencies {
     testImplementation libs.retrofitMock
 }
 
-compileJava {
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
+java {
+	sourceCompatibility = '21'
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withJavadocJar()
+    withSourcesJar()
 }
 
 test {

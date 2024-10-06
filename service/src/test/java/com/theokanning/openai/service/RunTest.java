@@ -22,7 +22,8 @@ class RunTest {
     String token = System.getenv("OPENAI_TOKEN");
     OpenAiService service = new OpenAiService(token);
 
-    @Test
+    @SuppressWarnings("unused")
+@Test
     @Timeout(10)
     void createRetrieveRun() {
         AssistantRequest assistantRequest = AssistantRequest.builder()

@@ -20,6 +20,7 @@ public class OpenAiApiDynamicFunctionExample {
         return response;
     }
 
+    @SuppressWarnings("resource")
     public static void main(String... args) {
         String token = System.getenv("OPENAI_TOKEN");
         OpenAiService service = new OpenAiService(token);

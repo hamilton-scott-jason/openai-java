@@ -1,7 +1,16 @@
 package com.theokanning.openai;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theokanning.openai.audio.TranscriptionResult;
 import com.theokanning.openai.audio.TranslationResult;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
@@ -22,16 +31,10 @@ import com.theokanning.openai.messages.Message;
 import com.theokanning.openai.model.Model;
 import com.theokanning.openai.moderation.ModerationRequest;
 import com.theokanning.openai.moderation.ModerationResult;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonTest {
 
+    @SuppressWarnings("deprecation")
     @ParameterizedTest
     @ValueSource(classes = {
             ChatCompletionRequest.class,

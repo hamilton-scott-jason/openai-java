@@ -9,6 +9,7 @@ import java.util.List;
 
 class TikTokensExample {
 
+    @SuppressWarnings("unused")
     public static void main(String... args) {
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), "Hello OpenAI 1."));

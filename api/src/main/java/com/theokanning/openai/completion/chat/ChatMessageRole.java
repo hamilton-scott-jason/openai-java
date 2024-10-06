@@ -4,10 +4,7 @@ package com.theokanning.openai.completion.chat;
  * see {@link ChatMessage} documentation.
  */
 public enum ChatMessageRole {
-    SYSTEM("system"),
-    USER("user"),
-    ASSISTANT("assistant"),
-    FUNCTION("function");
+    SYSTEM("system"), USER("user"), ASSISTANT("assistant"), FUNCTION("function");
 
     private final String value;
 

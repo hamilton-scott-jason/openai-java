@@ -52,6 +52,7 @@ public class ChatFunction {
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         public <T> Builder executor(Class<T> requestClass, Function<T, Object> executor) {
             this.parameters = requestClass;
             this.executor = (Function<Object, Object>) executor;

@@ -8,5 +8,6 @@ include 'service'
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        mavenLocal()
     }
 }

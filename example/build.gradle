@@ -9,6 +9,15 @@ dependencies {
     implementation project(":service")
 }
 
+java {
+	sourceCompatibility = '21'
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
 task runExampleOne(type: JavaExec) {
     mainClass.set('example.OpenAiApiExample')
     classpath = sourceSets.main.runtimeClasspath

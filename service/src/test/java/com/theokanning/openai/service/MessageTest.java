@@ -1,25 +1,24 @@
 package com.theokanning.openai.service;
 
-import com.theokanning.openai.ListSearchParameters;
-import com.theokanning.openai.file.File;
-import com.theokanning.openai.messages.Message;
-import com.theokanning.openai.messages.MessageFile;
-import com.theokanning.openai.messages.MessageRequest;
-import com.theokanning.openai.messages.ModifyMessageRequest;
-import com.theokanning.openai.threads.Thread;
-import com.theokanning.openai.threads.ThreadRequest;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
+import com.theokanning.openai.ListSearchParameters;
+import com.theokanning.openai.file.File;
+import com.theokanning.openai.messages.Message;
+import com.theokanning.openai.messages.MessageFile;
+import com.theokanning.openai.messages.MessageRequest;
+import com.theokanning.openai.messages.ModifyMessageRequest;
+import com.theokanning.openai.threads.ThreadRequest;
 
 public class MessageTest {
 
@@ -119,7 +118,8 @@ public class MessageTest {
         assertEquals(file.getId(), messageFile.getId());
         assertEquals(message.getId(), messageFile.getMessageId());
 
-        List<MessageFile> messageFiles = service.listMessageFiles(threadId, message.getId(), new ListSearchParameters()).getData();
+        List<MessageFile> messageFiles = service.listMessageFiles(threadId, message.getId(), new ListSearchParameters())
+                .getData();
         assertEquals(1, messageFiles.size());
     }
 

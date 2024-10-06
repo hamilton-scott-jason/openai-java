@@ -58,6 +58,7 @@ public class OpenAiServiceTest {
         assertEquals(401, exception.statusCode);
     }
 
+    @SuppressWarnings("unused")
     @Test
     void executeNullErrorBodyThrowOriginalError() {
         // exception with a successful response creates an error without an error body

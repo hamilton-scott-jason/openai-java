@@ -1,6 +1,8 @@
 package com.theokanning.openai.completion.chat;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 
 /**
@@ -15,7 +17,8 @@ public class ChatCompletionChoice {
     Integer index;
 
     /**
-     * The {@link ChatMessageRole#assistant} message or delta (when streaming) which was generated
+     * The {@link ChatMessageRole#ASSISTANT} message or delta (when streaming) which
+     * was generated
      */
     @JsonAlias("delta")
     ChatMessage message;

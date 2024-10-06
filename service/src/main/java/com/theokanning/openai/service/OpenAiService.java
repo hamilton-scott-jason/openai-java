@@ -1,21 +1,51 @@
 package com.theokanning.openai.service;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.theokanning.openai.*;
-import com.theokanning.openai.assistants.*;
-import com.theokanning.openai.audio.*;
+import com.theokanning.openai.DeleteResult;
+import com.theokanning.openai.ListSearchParameters;
+import com.theokanning.openai.OpenAiError;
+import com.theokanning.openai.OpenAiHttpException;
+import com.theokanning.openai.OpenAiResponse;
+import com.theokanning.openai.assistants.Assistant;
+import com.theokanning.openai.assistants.AssistantFile;
+import com.theokanning.openai.assistants.AssistantFileRequest;
+import com.theokanning.openai.assistants.AssistantRequest;
+import com.theokanning.openai.assistants.ModifyAssistantRequest;
+import com.theokanning.openai.audio.CreateSpeechRequest;
+import com.theokanning.openai.audio.CreateTranscriptionRequest;
+import com.theokanning.openai.audio.CreateTranslationRequest;
+import com.theokanning.openai.audio.TranscriptionResult;
+import com.theokanning.openai.audio.TranslationResult;
 import com.theokanning.openai.billing.BillingUsage;
 import com.theokanning.openai.billing.Subscription;
 import com.theokanning.openai.client.OpenAiApi;
 import com.theokanning.openai.completion.CompletionChunk;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.completion.CompletionResult;
-import com.theokanning.openai.completion.chat.*;
+import com.theokanning.openai.completion.chat.ChatCompletionChunk;
+import com.theokanning.openai.completion.chat.ChatCompletionRequest;
+import com.theokanning.openai.completion.chat.ChatCompletionResult;
+import com.theokanning.openai.completion.chat.ChatFunction;
+import com.theokanning.openai.completion.chat.ChatFunctionCall;
+import com.theokanning.openai.completion.chat.ChatMessage;
+import com.theokanning.openai.completion.chat.ChatMessageRole;
 import com.theokanning.openai.edit.EditRequest;
 import com.theokanning.openai.edit.EditResult;
 import com.theokanning.openai.embedding.EmbeddingRequest;
@@ -45,26 +75,21 @@ import com.theokanning.openai.runs.RunStep;
 import com.theokanning.openai.runs.SubmitToolOutputsRequest;
 import com.theokanning.openai.threads.Thread;
 import com.theokanning.openai.threads.ThreadRequest;
+
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import okhttp3.*;
+import okhttp3.ConnectionPool;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
-
-import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class OpenAiService {
 
@@ -87,7 +112,8 @@ public class OpenAiService {
     /**
      * Creates a new OpenAiService that wraps OpenAiApi
      *
-     * @param token   OpenAi token string "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+     * @param token   OpenAi token string
+     *                "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
      * @param timeout http read timeout, Duration.ZERO means no timeout
      */
     public OpenAiService(final String token, final Duration timeout) {
@@ -101,7 +127,8 @@ public class OpenAiService {
 
     /**
      * Creates a new OpenAiService that wraps OpenAiApi.
-     * Use this if you need more customization, but use OpenAiService(api, executorService) if you use streaming and
+     * Use this if you need more customization, but use OpenAiService(api,
+     * executorService) if you use streaming and
      * want to shut down instantly
      *
      * @param api OpenAiApi instance to use for all methods
@@ -113,13 +140,15 @@ public class OpenAiService {
 
     /**
      * Creates a new OpenAiService that wraps OpenAiApi.
-     * The ExecutorService must be the one you get from the client you created the api with
+     * The ExecutorService must be the one you get from the client you created the
+     * api with
      * otherwise shutdownExecutor() won't work.
      * <p>
      * Use this if you need more customization.
      *
      * @param api             OpenAiApi instance to use for all methods
-     * @param executorService the ExecutorService from client.dispatcher().executorService()
+     * @param executorService the ExecutorService from
+     *                        client.dispatcher().executorService()
      */
     public OpenAiService(final OpenAiApi api, final ExecutorService executorService) {
         this.api = api;
@@ -453,7 +482,8 @@ public class OpenAiService {
         return execute(api.listMessageFiles(threadId, messageId));
     }
 
-    public OpenAiResponse<MessageFile> listMessageFiles(String threadId, String messageId, ListSearchParameters params) {
+    public OpenAiResponse<MessageFile> listMessageFiles(String threadId, String messageId,
+            ListSearchParameters params) {
         Map<String, Object> queryParameters = mapper.convertValue(params, new TypeReference<Map<String, Object>>() {
         });
         return execute(api.listMessageFiles(threadId, messageId, queryParameters));
@@ -471,6 +501,7 @@ public class OpenAiService {
         return execute(api.modifyRun(threadId, runId, metadata));
     }
 
+    @SuppressWarnings("unchecked")
     public OpenAiResponse<Run> listRuns(String threadId, ListSearchParameters listSearchParameters) {
         Map<String, String> search = new HashMap<>();
         if (listSearchParameters != null) {
@@ -496,7 +527,9 @@ public class OpenAiService {
         return execute(api.retrieveRunStep(threadId, runId, stepId));
     }
 
-    public OpenAiResponse<RunStep> listRunSteps(String threadId, String runId, ListSearchParameters listSearchParameters) {
+    @SuppressWarnings("unchecked")
+    public OpenAiResponse<RunStep> listRunSteps(String threadId, String runId,
+            ListSearchParameters listSearchParameters) {
         Map<String, String> search = new HashMap<>();
         if (listSearchParameters != null) {
             ObjectMapper mapper = defaultObjectMapper();
@@ -506,17 +539,23 @@ public class OpenAiService {
     }
 
     /**
-     * Calls the Open AI api, returns the response, and parses error messages if the request fails
+     * Calls the Open AI api, returns the response, and parses error messages if the
+     * request fails
      */
     public static <T> T execute(Single<T> apiCall) {
         try {
             return apiCall.blockingGet();
         } catch (HttpException e) {
             try {
-                if (e.response() == null || e.response().errorBody() == null) {
+                var r = e.response();
+                if (r == null) {
                     throw e;
                 }
-                String errorBody = e.response().errorBody().string();
+                ResponseBody rb = r.errorBody();
+                if (rb == null) {
+                    throw e;
+                }
+                String errorBody = rb.string();
 
                 OpenAiError error = mapper.readValue(errorBody, OpenAiError.class);
                 throw new OpenAiHttpException(error, e, e.code());
@@ -544,7 +583,8 @@ public class OpenAiService {
      * @param emitDone If true the last message ([DONE]) is emitted
      */
     public static Flowable<SSE> stream(Call<ResponseBody> apiCall, boolean emitDone) {
-        return Flowable.create(emitter -> apiCall.enqueue(new ResponseBodyCallback(emitter, emitDone)), BackpressureStrategy.BUFFER);
+        return Flowable.create(emitter -> apiCall.enqueue(new ResponseBodyCallback(emitter, emitDone)),
+                BackpressureStrategy.BUFFER);
     }
 
     /**
@@ -577,6 +617,7 @@ public class OpenAiService {
         return retrofit.create(OpenAiApi.class);
     }
 
+    @SuppressWarnings("deprecation")
     public static ObjectMapper defaultObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -617,12 +658,17 @@ public class OpenAiService {
                     functionCall.setName((functionCall.getName() == null ? "" : functionCall.getName()) + namePart);
                 }
                 if (messageChunk.getFunctionCall().getArguments() != null) {
-                    String argumentsPart = messageChunk.getFunctionCall().getArguments() == null ? "" : messageChunk.getFunctionCall().getArguments().asText();
-                    functionCall.setArguments(new TextNode((functionCall.getArguments() == null ? "" : functionCall.getArguments().asText()) + argumentsPart));
+                    String argumentsPart = messageChunk.getFunctionCall().getArguments() == null ? ""
+                            : messageChunk.getFunctionCall().getArguments().asText();
+                    functionCall.setArguments(new TextNode(
+                            (functionCall.getArguments() == null ? "" : functionCall.getArguments().asText())
+                                    + argumentsPart));
                 }
                 accumulatedMessage.setFunctionCall(functionCall);
             } else {
-                accumulatedMessage.setContent((accumulatedMessage.getContent() == null ? "" : accumulatedMessage.getContent()) + (messageChunk.getContent() == null ? "" : messageChunk.getContent()));
+                accumulatedMessage
+                        .setContent((accumulatedMessage.getContent() == null ? "" : accumulatedMessage.getContent())
+                                + (messageChunk.getContent() == null ? "" : messageChunk.getContent()));
             }
 
             if (chunk.getChoices().get(0).getFinishReason() != null) { // last
@@ -641,6 +687,7 @@ public class OpenAiService {
      *
      * @return Account information.
      */
+    @SuppressWarnings("deprecation")
     public Subscription subscription() {
         Single<Subscription> subscription = api.subscription();
         return subscription.blockingGet();
@@ -654,6 +701,7 @@ public class OpenAiService {
      * @param endDate
      * @return Consumption amount information.
      */
+    @SuppressWarnings("deprecation")
     public BillingUsage billingUsage(@NotNull LocalDate starDate, @NotNull LocalDate endDate) {
         Single<BillingUsage> billingUsage = api.billingUsage(starDate, endDate);
         return billingUsage.blockingGet();
